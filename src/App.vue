@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div>
     <router-view></router-view>
   </div>
 </template>
@@ -7,12 +7,18 @@
 <script>
 export default {
   name: 'app',
-  data: () => ({
-    hello: "hello"
-  })
+  mounted() {
+    this.$router.push("/login")
+  }
+
 }
 </script>
 
 <style lang="scss">
-
+html {
+  font-family: 'Roboto', sans-serif;
+}
+body {
+  margin: 0;
+}
 </style>
