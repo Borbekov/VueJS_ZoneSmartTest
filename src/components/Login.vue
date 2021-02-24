@@ -1,14 +1,14 @@
 <template>
   <div id="app">
-    <router-view></router-view>
+    {{text}}
   </div>
 </template>
 
 <script>
 export default {
-  name: 'app',
+  name: 'login',
   data: () => ({
-    hello: "hello"
+    text: "login page"
   })
 }
 </script>
