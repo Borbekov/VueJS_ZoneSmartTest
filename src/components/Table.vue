@@ -14,15 +14,14 @@
           <input type="text" placeholder="Поиск">
         </div>
       </div>
-
       <div class="table">
         <div class="header">
           <div class="row">
             <div class="main">
-              <div class="column checkbox">
-                <input type="checkbox" id="1" class="styled_checkbox">
-                <label for="1" class="form-check-label"></label>
-              </div>
+              <label class="column checkbox">
+                <input type="checkbox">
+                <span class="checkmark"></span>
+              </label>
               <div class="column id">
                 ID
               </div>
@@ -56,18 +55,18 @@
           </div>
         </div>
         <div class="body">
-          <div class="row">
+          <div class="row" v-for="data in table_data" :key="data.id">
             <div class="main">
-              <div class="column checkbox">
-                <input type="checkbox" id="2" class="styled_checkbox">
-                <label for="2" class="form-check-label"></label>
-              </div>
+              <label class="column checkbox">
+                  <input type="checkbox" :checked="data.checked" @change="checkboxCheck(data.id)">
+                  <span class="checkmark"></span>
+              </label>
               <div class="column id">
-                1034
+                {{data.order_id}}
               </div>
-              <div class="column items" @click="secondary = !secondary">
+              <div class="column items" @click="chooseItem(data.id)">
                 <i class="ri-add-line"></i>
-                <p>2 товара</p>
+                <p>{{data.items.length}} товара</p>
               </div>
               <div class="column date">
                 01.11.2020
@@ -76,24 +75,26 @@
                 В ожидании оплаты
               </div>
               <div class="column iconHeaders">
-                <div>
+                <div v-if="data.is_paid">
                   <i class="ri-checkbox-circle-fill"></i>
                 </div>
-                <div>
+                <div class="empty" v-else></div>
+                <div v-if="data.is_shipped">
                   <i class="ri-checkbox-circle-fill"></i>
                 </div>
+                <div class="empty" v-else></div>
               </div>
               <div class="column buyer">
-                Borbekov Bekzhan
+                {{data.buyer}}
               </div>
               <div class="column method">
                 Почта России
               </div>
               <div class="column sum">
-                $100
+                ${{data.total_price}}
               </div>
             </div>
-            <div class="secondary" v-if="secondary">
+            <div class="secondary" v-if="data.opened">
               <div class="sec_header">
                 <div class="column name">
                   Название/SKU
@@ -112,50 +113,27 @@
                 </div>
               </div>
               <div class="sec_table">
-                <div class="row">
+                <div class="row" v-for="subdata in data.items" :key="subdata.id">
                   <div class="column name">
                     <div class="img">
-
+                      <img src="https://www.dior.com/beauty/version-5.1610097138803/resize-image/ep/870/580/90/0/%252FY0785220%252FV002%252FY0785220_C099600180_E01_ZHC.jpg" alt="">
                     </div>
                     <div class="text">
-                      <p class="main_text">Какое-то название</p>
-                      <p class="secondary_text">mac_pro16_10</p>
+                      <p class="main_text">{{subdata.title}}</p>
+                      <p class="secondary_text">{{subdata.sku}}</p>
                     </div>
                   </div>
                   <div class="column amount">
-                    11
+                    {{subdata.quantity}}
                   </div>
                   <div class="column deliviered">
-                    22
+                    {{subdata.quantity}}
                   </div>
                   <div class="column price">
-                    $100
+                    {{subdata.price}}
                   </div>
                   <div class="column sum">
-                    $1000
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="column name">
-                    <div class="img">
-
-                    </div>
-                    <div class="text">
-                      <p class="main_text">Какое-то название</p>
-                      <p class="secondary_text">mac_pro16_10</p>
-                    </div>
-                  </div>
-                  <div class="column amount">
-                    11
-                  </div>
-                  <div class="column deliviered">
-                    22
-                  </div>
-                  <div class="column price">
-                    $100
-                  </div>
-                  <div class="column sum">
-                    $1000
+                    {{subdata.total_price}}
                   </div>
                 </div>
               </div>
@@ -168,11 +146,36 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from "vuex"
+
 export default {
   name: 'table',
   data: () => ({
-    secondary: false
-  })
+    chosen_id: ""
+  }),
+  computed: {
+    ...mapGetters({
+      access_token: "get_access_token",
+      table_data: "get_table_data"
+    }),
+  },
+  methods: {
+    ...mapActions({
+      fetchTableData: "fetchTableData"
+    }),
+    checkboxCheck(id) {
+      this.$store.commit("SET_CHECKBOX_STATE", id)
+    },
+    chooseItem(id) {
+      this.$store.commit("SET_SUB_STATE", id)
+    }
+  },
+  mounted() {
+    this.fetchTableData()
+    if (!this.access_token) {
+      this.$router.push("/")
+    }
+  }
 }
 </script>
 
@@ -227,33 +230,40 @@ export default {
           &.checkbox {
             width: 4%;
             opacity: 1;
-            .styled_checkbox {
-              position: absolute;
+            display: block;
+            position: relative;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            input {
+              // position: absolute;
               opacity: 0;
+              cursor: pointer;
+              height: 0;
               width: 0;
-              & + label {
-                position: relative;
-                cursor: pointer;
-              }
-              & + label:before {
-                content: "";
-                display: inline-block;
-                vertical-align: text-top;
-                width: 24px;
-                height: 24px;
-                background: #FFFFFF;
-                border: 1px solid #C5C7CD;
-                border-radius: 3px;
-                position: relative;
-                top: 0px;
-              }
-              &:checked + label:after {
+            }
+            input:checked ~ .checkmark:after {
+              display: block;
+            }
+            .checkmark {
+              position: absolute;
+              top: -6px;
+              left: 0;
+              height: 24px;
+              width: 24px;
+              border: 1px solid #C5C7CD;
+              border-radius: 3px;
+              background-color: #FFFFFF;
+              &:after {
                 content: "";
                 position: absolute;
+                display: none;
                 left: 9px;
-                top: 3px;
+                top: 2px;
                 width: 5px;
-                height: 13px;
+                height: 15px;
                 border: solid #152739;
                 border-width: 0 3px 3px 0;
                 -webkit-transform: rotate(45deg);
@@ -263,15 +273,15 @@ export default {
             }
           }
           &.id {
-            width: 6%;
+            width: 9%;
             margin-right: 1%;
           }
           &.items {
-            width: 11%;
+            width: 9%;
             margin-right: 1%;
           }
           &.date {
-            width: 11%;
+            width: 10%;
             margin-right: 1%;
           }
           &.status {
@@ -284,6 +294,12 @@ export default {
             display: flex;
             align-items: center;
             justify-content: space-around;
+            .empty {
+              width: 20px;
+              height: 20px;
+              background: #F6F9FC;
+              border-radius: 100px;
+            }
           }
           &.buyer {
             width: 17%;
@@ -344,6 +360,7 @@ export default {
           background: #F6F9FC;
           border-radius: 6px;
           padding: 28px 20px 20px 63px;
+          margin-bottom: 20px;
           .sec_header {
             display: flex;
             align-items: flex-start;
@@ -388,11 +405,15 @@ export default {
                   align-items: center;
                   margin-right: 1%;
                   .img {
-                    width: 40px;
+                    min-width: 40px;
+                    max-width: 40px;
                     height: 40px;
-                    background: skyblue;
-                    border-radius: 4px;
                     margin-right: 20px;
+                    img {
+                      width: 100%;
+                      height: 100%;
+                      border-radius: 4px;
+                    }
                   }
                   .text {
                     p {

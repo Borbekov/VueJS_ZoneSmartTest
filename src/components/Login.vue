@@ -23,8 +23,8 @@ export default {
   name: 'login',
   data: () => ({
     input_type: "password",
-    email: "",
-    password: ""
+    email: "test@zonesmart.ru",
+    password: "4815162342test"
   }),
   computed: {
     ...mapGetters({
@@ -33,10 +33,18 @@ export default {
   },
   methods: {
     ...mapActions({
-
+      logInFunc: 'logIn'
     }),
     login() {
-      console.log(this.email, this.password);
+      let data = {
+        email: this.email,
+        password: this.password
+      }
+      this.logInFunc(data).then(status => {
+        if (status) {
+          this.$router.push("/table")
+        }
+      })
     }
   }
 }

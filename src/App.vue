@@ -8,9 +8,12 @@
 export default {
   name: 'app',
   created() {
-    let access_token = JSON.parse(localStorage.getItem("access_token"))
+    let access_token = localStorage.getItem("access_token")
+    let refresh_token = localStorage.getItem("refresh_token")
     if (access_token) {
       this.$router.push("/table")
+      this.$store.commit("SET_ACCESS_TOKEN", access_token)
+      this.$store.commit("SET_REFRESH_TOKEN", refresh_token)
     }
   }
 
