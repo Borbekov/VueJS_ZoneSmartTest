@@ -17,6 +17,8 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from "vuex"
+
 export default {
   name: 'login',
   data: () => ({
@@ -24,7 +26,15 @@ export default {
     email: "",
     password: ""
   }),
+  computed: {
+    ...mapGetters({
+
+    })
+  },
   methods: {
+    ...mapActions({
+
+    }),
     login() {
       console.log(this.email, this.password);
     }

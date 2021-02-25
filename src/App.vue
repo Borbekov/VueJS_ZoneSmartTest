@@ -7,8 +7,11 @@
 <script>
 export default {
   name: 'app',
-  mounted() {
-    this.$router.push("/table")
+  created() {
+    let access_token = JSON.parse(localStorage.getItem("access_token"))
+    if (access_token) {
+      this.$router.push("/table")
+    }
   }
 
 }
