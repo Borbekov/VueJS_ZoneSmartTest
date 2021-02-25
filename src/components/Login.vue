@@ -3,15 +3,15 @@
     <div id="wrapper">
       <h1>Вход</h1>
       <div class="input">
-        <input type="text" name="email" id="email" placeholder="E-mail или телефон">
+        <input type="text" placeholder="E-mail или телефон" v-model="email">
       </div>
       <div class="input password">
-        <input :type="input_type" name="password" id="password" placeholder="Пароль">
+        <input :type="input_type" placeholder="Пароль" v-model="password">
         <i class="ri-eye-line" v-if="input_type === 'password'" @click="input_type = 'text'"></i>
         <i class="ri-eye-off-line" v-else @click="input_type = 'password'"></i>
       </div>
-      <button>Войти</button>
-      <p id="register">Зарегистрироваться</p>
+      <button class="green_btn" @click="login">Войти</button>
+      <p class="green_txt">Зарегистрироваться</p>
     </div>
   </div>
 </template>
@@ -20,8 +20,15 @@
 export default {
   name: 'login',
   data: () => ({
-    input_type: "password"
-  })
+    input_type: "password",
+    email: "",
+    password: ""
+  }),
+  methods: {
+    login() {
+      console.log(this.email, this.password);
+    }
+  }
 }
 </script>
 
@@ -64,44 +71,6 @@ export default {
           cursor: pointer;
         }
       }
-      input {
-        border: 1px solid #C5C7CD;
-        border-radius: 6px;
-        width: 90%;
-        padding: 15px;
-        &:focus {
-          outline: none;
-        }
-      }
-    }
-    button {
-      background: #3CC8AE;
-      border-radius: 4px;
-      width: 100%;
-      padding: 18px;
-      border: none;
-      color: #FFFFFF;
-      letter-spacing: 1px;
-      line-height: 16px;
-      font-size: 14px;
-      font-weight: 500;
-      margin-bottom: 20px;
-      cursor: pointer;
-      &:focus {
-        outline: none;
-      }
-      &:hover {
-        background: #3FBAA3;
-      }
-      &:active {
-        background: #41AB97;
-      }
-    }
-    #register {
-      color: #1FB297;
-      line-height: 22px;
-      font-size: 12px;
-      cursor: pointer;
     }
   }
 }
