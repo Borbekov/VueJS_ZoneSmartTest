@@ -4,14 +4,19 @@ import Vuex from "vuex"
 
 Vue.use(Vuex)
 
-export const store = new Vuex.Store({
-  state: {
+const getDefaultState = () => {
+  return {
     access_token: "",
     refresh_token: "",
     total_count: 0,
     table_data: [],
+    is_table_data: false,
     checked_rows: []
-  },
+  }
+}
+
+export const store = new Vuex.Store({
+  state: getDefaultState(),
   getters: {
     get_access_token(state) {
       return state.access_token
@@ -24,6 +29,9 @@ export const store = new Vuex.Store({
     },
     get_table_data(state) {
       return state.table_data
+    },
+    get_is_table_data(state) {
+      return state.is_table_data
     },
     get_checked_rows(state) {
       return state.checked_rows
@@ -41,6 +49,9 @@ export const store = new Vuex.Store({
     },
     SET_TABLE_DATA(state, payload) {
       state.table_data = payload.map(item => ({...item, opened: false, checked: false}))
+    },
+    SET_IS_TABLE_DATA(state, payload) {
+      state.is_table_data = payload
     },
     SET_ALL_CHECKBOX_STATE(state, payload) {
       state.table_data.forEach(element => {
@@ -65,22 +76,31 @@ export const store = new Vuex.Store({
         element.id === id && (
           element.opened = !element.opened
         )
-      });
+      })
+    },
+    RESET_STATE(state) {
+      Object.assign(state, getDefaultState())
     }
   },
   actions: {
     async logIn(store, payload) {
-      let url = `https://zonesmart.su/api/v1/auth/jwt/create/`
-      const response = await axios.post(url, payload)
-      if (response.status === 200) {
-        store.commit("SET_ACCESS_TOKEN", response.data.access)
-        localStorage.setItem("access_token", response.data.access)
-        store.commit("SET_REFRESH_TOKEN", response.data.refresh)
-        localStorage.setItem("refresh_token", response.data.refresh)
-        return 1
+      try {
+        let url = `https://zonesmart.su/api/v1/auth/jwt/create/`
+        const response = await axios.post(url, payload)
+        if (response.status === 200) {
+          store.commit("SET_ACCESS_TOKEN", response.data.access)
+          localStorage.setItem("access_token", response.data.access)
+          store.commit("SET_REFRESH_TOKEN", response.data.refresh)
+          localStorage.setItem("refresh_token", response.data.refresh)
+          return "success"
+        }
+      } catch (err) {
+        console.log("Error -> ", err)
+        return "error"
       }
     },
     async fetchTableData(store, payload) {
+      store.commit("SET_IS_TABLE_DATA", false)
       try {
         let url = `https://zonesmart.su/api/v1/zonesmart/order/`
         const response = await axios.get(url, {
@@ -92,6 +112,7 @@ export const store = new Vuex.Store({
         if (response.status === 200) {
           store.commit("SET_TOTAL_COUNT", response.data.count)
           store.commit("SET_TABLE_DATA", response.data.results)
+          store.commit("SET_IS_TABLE_DATA", true)
         }
       } catch (err) {
         try {
@@ -103,7 +124,7 @@ export const store = new Vuex.Store({
             store.dispatch('fetchTableData')
           }
         } catch (err) {
-          console.log(err);
+          console.log("Error -> ", err)
         }
       }
     },

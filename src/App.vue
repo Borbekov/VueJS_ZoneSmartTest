@@ -79,6 +79,13 @@ input {
   &:active {
     background: #41AB97;
   }
+  &:disabled {
+    opacity: .5;
+    cursor: no-drop;
+    &:hover {
+      background: #3CC8AE;
+    }
+  }
 }
 .green_txt {
   color: #1FB297;

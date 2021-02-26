@@ -15,6 +15,8 @@
           <input type="text" placeholder="Поиск" v-model="search_key">
         </div>
       </div>
+
+      <!-- TABLE -->
       <div class="table">
         <div class="header">
           <div class="row">
@@ -65,7 +67,7 @@
             </div>
           </div>
         </div>
-        <div class="body">
+        <div class="body" v-if="is_table_data">
           <div class="row" v-for="data in table_data" :key="data.id">
             <div class="main" @click="chooseItem(data.id)">
               <div class="column id">
@@ -154,7 +156,52 @@
             <!-- </transition> -->
           </div>
         </div>
+
+
+        <!-- SCELETON -->
+        <div class="body" v-else>
+          <div class="row" v-for="(data, index) in [0,1,2,3,4,5,6,7,8,9]" :key="index">
+            <div class="main">
+              <div class="column id">
+                <label class="checkbox">
+                  <div class="sceleton"></div>
+                </label>
+                <div class="sceleton_column id"></div>
+              </div>
+              <div class="column items">
+                <div class="sceleton_column"></div>
+              </div>
+              <div class="column date">
+                <div class="sceleton_column"></div>
+              </div>
+              <div class="column status">
+                <div class="sceleton_column"></div>
+              </div>
+              <div class="column iconHeaders">
+                <div>
+                  <div class="empty"></div>
+                </div>
+                <div>
+                  <div class="empty"></div>
+                </div>
+              </div>
+              <div class="column buyer">
+                <div class="sceleton_column"></div>
+              </div>
+              <div class="column method">
+                <div class="sceleton_column"></div>
+              </div>
+              <div class="column sum">
+                <div class="sceleton_column"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- SCELETON -->
       </div>
+      <!-- TABLE -->
+
+      <!-- PAGINATION -->
       <div class="pagination_wrapper" v-if="total_count > 9">
         <i class="ri-arrow-left-line" @click="prevPage"></i>
         <div class="pagination">
@@ -162,6 +209,8 @@
         </div>
         <i class="ri-arrow-right-line" @click="nextPage"></i>
       </div>
+      <!-- PAGINATION -->
+
     </div>
   </div>
 </template>
@@ -184,6 +233,7 @@ export default {
     ...mapGetters({
       access_token: "get_access_token",
       table_data: "get_table_data",
+      is_table_data: "get_is_table_data",
       checked_rows: "get_checked_rows",
       total_count: "get_total_count"
     }),
@@ -271,6 +321,7 @@ export default {
     logOut() {
       localStorage.removeItem("access_token")
       localStorage.removeItem("refresh_token")
+      this.$store.commit("RESET_STATE")
       this.$router.push("/")
     }
   },
@@ -392,6 +443,14 @@ export default {
                   transform: rotate(45deg);
                 }
               }
+              .sceleton {
+                position: absolute;
+                top: 5px;
+                height: 25px;
+                width: 25px;
+                background-color: #F2F2F5;
+                border-radius: 3px;
+              }
             }
             p {
               margin-left: 42px;
@@ -443,6 +502,16 @@ export default {
             width: 6%;
             text-align: right;
             opacity: 0.5;
+          }
+          .sceleton_column {
+            height: 16px;
+            width: 90%;
+            background-color: #F2F2F5;
+            border-radius: 3px;
+            margin: 11px 0;
+            &.id {
+              margin-left: 40px;
+            }
           }
         }
         .action {

@@ -10,7 +10,7 @@
         <i class="ri-eye-line" v-if="input_type === 'password'" @click="input_type = 'text'"></i>
         <i class="ri-eye-off-line" v-else @click="input_type = 'password'"></i>
       </div>
-      <button class="green_btn" @click="login">Войти</button>
+      <button class="green_btn" id="login_btn" @click="login">Войти</button>
       <p class="green_txt">Зарегистрироваться</p>
     </div>
   </div>
@@ -36,13 +36,17 @@ export default {
       logInFunc: 'logIn'
     }),
     login() {
+      document.getElementById("login_btn").disabled = true
       let data = {
         email: this.email,
         password: this.password
       }
       this.logInFunc(data).then(status => {
-        if (status) {
+        if (status === "success") {
+          document.getElementById("login_btn").disabled = false
           this.$router.push("/table")
+        } else {
+          document.getElementById("login_btn").disabled = false
         }
       })
     }
