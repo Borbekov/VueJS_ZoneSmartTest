@@ -2,28 +2,29 @@
   <div id="wrapper">
     <div class="table_container">
       <div class="top">
-        <div class="header">
+        <div class="main_header">
           <p class="title">Таблица заказов</p>
           <div class="actions">
+            <p class="logout" @click="logOut">Выйти</p>
             <button class="black_btn">Отправления</button>
             <button class="green_btn">Экспортировать</button>
           </div>
         </div>
         <div class="filter">
           <button class="black_btn">Фильтр</button>
-          <input type="text" placeholder="Поиск">
+          <input type="text" placeholder="Поиск" v-model="search_key">
         </div>
       </div>
       <div class="table">
         <div class="header">
           <div class="row">
-            <div class="main">
-              <label class="column checkbox">
-                <input type="checkbox">
-                <span class="checkmark"></span>
-              </label>
+            <div class="main" v-if="!checked_rows.length">
               <div class="column id">
-                ID
+                <label class="checkbox">
+                  <input type="checkbox" :checked="main_checkbox" @change="mainCheck">
+                  <span class="checkmark"></span>
+                </label>
+                <p class="text_id">ID</p>
               </div>
               <div class="column items">
                 Товары
@@ -52,24 +53,35 @@
                 Стоимость
               </div>
             </div>
+            <div class="main" v-else>
+              <div class="column id">
+                <label class="checkbox">
+                  <input type="checkbox" :checked="main_checkbox" @change="mainCheck">
+                  <span class="checkmark"></span>
+                </label>
+                <p class="action" @click="updateItems">Обновить</p>
+                <p class="action" @click="deleteItems">Удалить</p>
+              </div>
+            </div>
           </div>
         </div>
         <div class="body">
           <div class="row" v-for="data in table_data" :key="data.id">
-            <div class="main">
-              <label class="column checkbox">
+            <div class="main" @click="chooseItem(data.id)">
+              <div class="column id">
+                <label class="checkbox">
                   <input type="checkbox" :checked="data.checked" @change="checkboxCheck(data.id)">
                   <span class="checkmark"></span>
-              </label>
-              <div class="column id">
-                {{data.order_id}}
+                </label>
+                <p>{{data.order_id}}</p>
               </div>
-              <div class="column items" @click="chooseItem(data.id)">
-                <i class="ri-add-line"></i>
-                <p>{{data.items.length}} товара</p>
+              <div class="column items">
+                <i class="ri-add-line" v-if="!data.opened"></i>
+                <i class="ri-close-line" v-else></i>
+                <p>{{goodsAmount(data.items.length)}}</p>
               </div>
               <div class="column date">
-                01.11.2020
+                {{formatDate(data.create_date)}}
               </div>
               <div class="column status">
                 В ожидании оплаты
@@ -94,6 +106,7 @@
                 ${{data.total_price}}
               </div>
             </div>
+            <!-- <transition name="fade"> -->
             <div class="secondary" v-if="data.opened">
               <div class="sec_header">
                 <div class="column name">
@@ -130,16 +143,24 @@
                     {{subdata.quantity}}
                   </div>
                   <div class="column price">
-                    {{subdata.price}}
+                    ${{subdata.price}}
                   </div>
                   <div class="column sum">
-                    {{subdata.total_price}}
+                    ${{subdata.total_price}}
                   </div>
                 </div>
               </div>
             </div>
+            <!-- </transition> -->
           </div>
         </div>
+      </div>
+      <div class="pagination_wrapper" v-if="total_count > 9">
+        <i class="ri-arrow-left-line" @click="prevPage"></i>
+        <div class="pagination">
+          {{from}} — {{to}} из {{total_count}}
+        </div>
+        <i class="ri-arrow-right-line" @click="nextPage"></i>
       </div>
     </div>
   </div>
@@ -149,29 +170,118 @@
 import { mapActions, mapGetters } from "vuex"
 
 export default {
-  name: 'table',
   data: () => ({
-    chosen_id: ""
+    chosen_id: "",
+    main_checkbox: false,
+    search_key: "",
+    params: {
+      limit: 10,
+      offset: 0,
+      search: ""
+    }
   }),
   computed: {
     ...mapGetters({
       access_token: "get_access_token",
-      table_data: "get_table_data"
+      table_data: "get_table_data",
+      checked_rows: "get_checked_rows",
+      total_count: "get_total_count"
     }),
+    goodsAmount() {
+      return amount => {
+        let text = ""
+        if (amount === 1) {
+          text = `${amount} товар`
+        }
+        if (amount < 5 && amount > 1) {
+          text = `${amount} товара`
+        }
+        if (amount > 4 && amount < 21) {
+          text = `${amount} товаров`
+        }
+        if (amount > 20) {
+          let a = amount
+          let x = "" + a
+          x = x.split("")[x.length - 1]
+          if (x == 1) {
+            text = `${amount} товар`
+          }
+          if (x < 5 && x > 1) {
+            text = `${amount} товара`
+          }
+          if (x > 4) {
+            text = `${amount} товаров`
+          }
+        }
+        return text
+      }
+    },
+    formatDate() {
+      return d => {
+        let date = new Date(d)
+        let dd = String(date.getDate()).padStart(2, '0')
+        let mm = String(date.getMonth() + 1).padStart(2, '0')
+        let yyyy = date.getFullYear()
+        return dd + '.' + mm + '.' + yyyy
+      }
+    },
+    from() {
+      return this.params.offset + 1
+    },
+    to() {
+      if (this.params.limit + this.params.offset >= this.total_count) {
+        return this.total_count
+      } else {
+        return this.params.limit + this.params.offset 
+      }
+    }
   },
   methods: {
     ...mapActions({
       fetchTableData: "fetchTableData"
     }),
+    mainCheck() {
+      this.main_checkbox = !this.main_checkbox
+      this.$store.commit("SET_ALL_CHECKBOX_STATE", this.main_checkbox)
+    },
     checkboxCheck(id) {
       this.$store.commit("SET_CHECKBOX_STATE", id)
     },
     chooseItem(id) {
       this.$store.commit("SET_SUB_STATE", id)
+    },
+    updateItems() {
+      console.log("Обновляю ", this.checked_rows)
+    },
+    deleteItems() {
+      console.log("Удаляю ", this.checked_rows)
+    },
+    prevPage() {
+      if (this.params.offset >= 10) {
+        this.params.offset -= 10
+        this.fetchTableData(this.params)  
+      }
+    },
+    nextPage() {
+      if (this.total_count - this.params.offset > 9) {
+        this.params.offset += 10
+        this.fetchTableData(this.params)  
+      } 
+    },
+    logOut() {
+      localStorage.removeItem("access_token")
+      localStorage.removeItem("refresh_token")
+      this.$router.push("/")
+    }
+  },
+  watch: {
+    search_key() {
+      this.params.search = this.search_key
+      this.fetchTableData(this.params)  
     }
   },
   mounted() {
-    this.fetchTableData()
+    this.fetchTableData(this.params)
     if (!this.access_token) {
       this.$router.push("/")
     }
@@ -188,7 +298,7 @@ export default {
     margin: 0 30px;
   }
   .top {
-    .header {
+    .main_header {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -201,6 +311,14 @@ export default {
       .actions {
         display: flex;
         align-items: center;
+        .logout {
+          margin-right: 50px;
+          cursor: pointer;
+          color: grey;
+          &:hover {
+            color: black;
+          }
+        }
         .green_btn {
           padding: 9px 12px;
           margin: 0;
@@ -221,72 +339,81 @@ export default {
       .main {
         display: flex;
         align-items: center;
+        cursor: pointer;
         .column {
           color: #132739;
-          opacity: 0.5;
           line-height: 14px;
           font-size: 12px;
           font-weight: normal;
-          &.checkbox {
-            width: 4%;
-            opacity: 1;
-            display: block;
-            position: relative;
-            cursor: pointer;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            input {
-              // position: absolute;
-              opacity: 0;
-              cursor: pointer;
-              height: 0;
-              width: 0;
-            }
-            input:checked ~ .checkmark:after {
+          &.id {
+            width: 15%;
+            margin-right: 1%;
+            display: flex;
+            .checkbox {
+              opacity: 1;
               display: block;
-            }
-            .checkmark {
-              position: absolute;
-              top: -6px;
-              left: 0;
-              height: 24px;
-              width: 24px;
-              border: 1px solid #C5C7CD;
-              border-radius: 3px;
-              background-color: #FFFFFF;
-              &:after {
-                content: "";
+              position: relative;
+              cursor: pointer;
+              -webkit-user-select: none;
+              -moz-user-select: none;
+              -ms-user-select: none;
+              user-select: none;
+              input {
                 position: absolute;
-                display: none;
-                left: 9px;
-                top: 2px;
-                width: 5px;
-                height: 15px;
-                border: solid #152739;
-                border-width: 0 3px 3px 0;
-                -webkit-transform: rotate(45deg);
-                -ms-transform: rotate(45deg);
-                transform: rotate(45deg);
+                opacity: 0;
+                cursor: pointer;
+                height: 0;
+                width: 0;
+              }
+              input:checked ~ .checkmark:after {
+                display: block;
+              }
+              .checkmark {
+                position: absolute;
+                top: 5px;
+                left: 0;
+                height: 24px;
+                width: 24px;
+                border: 1px solid #C5C7CD;
+                border-radius: 3px;
+                background-color: #FFFFFF;
+                &:after {
+                  content: "";
+                  position: absolute;
+                  display: none;
+                  left: 9px;
+                  top: 2px;
+                  width: 5px;
+                  height: 15px;
+                  border: solid #152739;
+                  border-width: 0 3px 3px 0;
+                  -webkit-transform: rotate(45deg);
+                  -ms-transform: rotate(45deg);
+                  transform: rotate(45deg);
+                }
               }
             }
-          }
-          &.id {
-            width: 9%;
-            margin-right: 1%;
+            p {
+              margin-left: 42px;
+              &.text_id {
+                opacity: 0.5;
+              }
+            }
           }
           &.items {
             width: 9%;
             margin-right: 1%;
+            opacity: 0.5;
           }
           &.date {
             width: 10%;
             margin-right: 1%;
+            opacity: 0.5;
           }
           &.status {
             width: 10%;
             margin-right: 1%;
+            opacity: 0.5;
           }
           &.iconHeaders {
             width: 15%;
@@ -294,6 +421,7 @@ export default {
             display: flex;
             align-items: center;
             justify-content: space-around;
+            opacity: 0.5;
             .empty {
               width: 20px;
               height: 20px;
@@ -302,17 +430,28 @@ export default {
             }
           }
           &.buyer {
-            width: 17%;
+            width: 15%;
             margin-right: 1%;
+            opacity: 0.5;
           }
           &.method {
             width: 15%;
             margin-right: 1%;
+            opacity: 0.5;
           }
           &.sum {
             width: 6%;
             text-align: right;
+            opacity: 0.5;
           }
+        }
+        .action {
+          color: #3CC8AE;
+          line-height: 24px;
+          font-size: 14px;
+          font-weight: 500;
+          margin-top: 7px;
+          cursor: pointer;
         }
       }
     }
@@ -355,6 +494,28 @@ export default {
               }
             }
           }
+        }
+        .fade-enter-active {
+          transition: 1s;
+        }
+        .fade-leave-active {
+          transition: .2s;
+        }
+        .fade-enter {
+          opacity: 0;
+          max-height: 0;
+        }
+        .fade-enter-to {
+          opacity: 1;
+          max-height: 200px;
+        }
+        .fade-leave {
+          opacity: 1;
+          max-height: 120px;
+        }
+        .fade-leave-to {
+          opacity: 0;
+          max-height: 0;
         }
         .secondary {
           background: #F6F9FC;
@@ -439,6 +600,23 @@ export default {
           }
         }
       }
+    }
+  }
+  .pagination_wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 20px;
+    color: #152739;
+    opacity: .5;
+    i {
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .pagination {
+      line-height: 24px;
+      font-size: 14px;
+      margin: 0 10px;
     }
   }
 }

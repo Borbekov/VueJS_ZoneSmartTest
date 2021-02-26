@@ -8,7 +8,9 @@ export const store = new Vuex.Store({
   state: {
     access_token: "",
     refresh_token: "",
-    table_data: []
+    total_count: 0,
+    table_data: [],
+    checked_rows: []
   },
   getters: {
     get_access_token(state) {
@@ -17,8 +19,14 @@ export const store = new Vuex.Store({
     get_refresh_token(state) {
       return state.refresh_token
     },
+    get_total_count(state) {
+      return state.total_count
+    },
     get_table_data(state) {
       return state.table_data
+    },
+    get_checked_rows(state) {
+      return state.checked_rows
     }
   },
   mutations: {
@@ -28,15 +36,29 @@ export const store = new Vuex.Store({
     SET_REFRESH_TOKEN(state, payload) {
       state.refresh_token = payload
     },
+    SET_TOTAL_COUNT(state, payload) {
+      state.total_count = payload
+    },
     SET_TABLE_DATA(state, payload) {
       state.table_data = payload.map(item => ({...item, opened: false, checked: false}))
+    },
+    SET_ALL_CHECKBOX_STATE(state, payload) {
+      state.table_data.forEach(element => {
+        element.checked = payload,
+        payload ? state.checked_rows.push(element.id) : (
+          state.checked_rows = []
+        )
+      })
     },
     SET_CHECKBOX_STATE(state, id) {
       state.table_data.forEach(element => {
         element.id === id && (
-          element.checked = !element.checked
+          element.checked = !element.checked,
+          element.checked ? state.checked_rows.push(element.id) : (
+            state.checked_rows = state.checked_rows.filter(elem =>  elem !== id)
+          )
         )
-      });
+      })
     },
     SET_SUB_STATE(state, id) {
       state.table_data.forEach(element => {
@@ -65,13 +87,10 @@ export const store = new Vuex.Store({
           headers: {
             'authorization': `JWT ${store.state.access_token}`
           },
-          params: {
-            limit: 10,
-            offset: 0,
-            search: ""
-          }
+          params: payload
         })
         if (response.status === 200) {
+          store.commit("SET_TOTAL_COUNT", response.data.count)
           store.commit("SET_TABLE_DATA", response.data.results)
         }
       } catch (err) {
